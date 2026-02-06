@@ -10,7 +10,7 @@ A modern, responsive e-commerce application built with the MERN stack (MongoDB, 
 - **Secure API:** Middleware-protected routes and environment variable management.
 
 ## 🛠️ Tech Stack
-- **Frontend:** React, Vite, Tailwind CSS (optional), Axios.
+- **Frontend:** React, Vite, Tailwind CSS, Axios.
 - **Backend:** Node.js, Express.js.
 - **Database:** MongoDB (using Mongoose).
 - **Tools:** Git, NPM, ESLint.
