@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Local development database files
+backend/.data/
+
 # Environment Variables (Security)
 .env
 .env.local
