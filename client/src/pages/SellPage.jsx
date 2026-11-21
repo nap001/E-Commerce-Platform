@@ -1,13 +1,5 @@
-import React from 'react'
-import Navbar from '../Components/NavBar'
-import SellItem from '../Components/SellItem'
+import SellItem from '../Components/SellItem';
 
-const SellPage = () => {
-  return (
-    <div>
-      <SellItem/ >
-    </div>
-  )
-}
+const SellPage = () => <SellItem />;
 
-export default SellPage
+export default SellPage;

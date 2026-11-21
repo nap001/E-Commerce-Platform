@@ -1,60 +1,94 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
-
-import ItemInfo from '../components/ItemInfo';
-import ItemDescription from '../components/ItemDescription';
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import api, { getErrorMessage } from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import ItemInfo from '../Components/ItemInfo';
+import ItemDescription from '../Components/ItemDescription';
 import ItemReviews from '../Components/ItemReviews';
 import ItemImageGallery from '../Components/ItemGallery';
 import ItemActions from '../Components/ItemAction';
 import ReviewForm from '../Components/ReviewForm';
+import Spinner from '../Components/Spinner';
+
 const ItemDetailPage = () => {
   const { id } = useParams();
+  const { token, user } = useAuth();
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/api/items/${id}`)
-      .then((res) => {
-        setItem(res.data);
-        setLoading(false);
-      })
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    api
+      .get(`/items/${id}`)
+      .then(({ data }) => !cancelled && setItem(data))
       .catch((err) => {
-        console.error('Error fetching item:', err);
-        setLoading(false);
-      });
+        if (cancelled) return;
+        setItem(null);
+        setError(err.response?.status === 404 ? 'Item not found.' : getErrorMessage(err, 'Failed to load the item.'));
+      })
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
-  if (loading) return <p className="p-6">Loading...</p>;
-  if (!item) return <p className="p-6 text-red-500">Item not found.</p>;
+  if (loading) return <Spinner label="Loading item..." />;
+  if (error || !item) {
+    return (
+      <div className="card p-10 text-center">
+        <p className="mb-4 text-red-500">{error || 'Item not found.'}</p>
+        <Link to="/" className="btn-primary">
+          Back to shop
+        </Link>
+      </div>
+    );
+  }
+
+  const isOwner = user && String(item.user) === String(user.id);
+  const hasReviewed = user && item.reviews.some((r) => String(r.user) === String(user.id));
+
+  let reviewSection = null;
+  if (!token) {
+    reviewSection = (
+      <div className="card p-6 text-center text-gray-600">
+        <Link to="/login" state={{ from: `/items/${id}` }} className="font-semibold text-green-700 hover:underline">
+          Log in
+        </Link>{' '}
+        to leave a review.
+      </div>
+    );
+  } else if (!isOwner && !hasReviewed) {
+    reviewSection = <ReviewForm itemId={item._id} onReviewAdded={setItem} />;
+  }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <ItemImageGallery image={item.image} />
+    <div>
+      <Link to="/" className="mb-4 inline-block text-sm text-green-700 hover:underline">
+        &larr; Back to shop
+      </Link>
+
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+        <ItemImageGallery image={item.image} name={item.name} />
         <div>
           <ItemInfo
             name={item.name}
             category={item.category}
             price={item.price}
             quantity={item.quantity}
+            averageRating={item.averageRating}
+            reviewCount={item.reviewCount}
           />
-          <ItemActions 
-          item = {item}
-          stock={item.quantity} />
+          <ItemActions item={item} />
         </div>
       </div>
 
-      <div className="mt-10 space-y-8">
+      <div className="mt-10 space-y-6">
         <ItemDescription text={item.description} />
         <ItemReviews reviews={item.reviews} />
-        <ReviewForm itemId={item._id} onReviewAdded={() => {
-          axios
-            .get(`${import.meta.env.VITE_API_URL}/api/items/${id}`)
-            .then((res) => setItem(res.data))
-            .catch((err) => console.error('Error refreshing item:', err));
-        }} />
+        {reviewSection}
       </div>
     </div>
   );

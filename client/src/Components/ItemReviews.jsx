@@ -1,26 +1,28 @@
-import React from 'react';
+import { StarRating } from './StarRating';
+import { formatDate } from '../utils/format';
 
-const ItemReviews = ({ reviews }) => {
+const ItemReviews = ({ reviews = [] }) => {
+  // Newest first; reviews created before timestamps existed keep their stored order
+  const sorted = [...reviews].reverse();
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm mt-6">
-      <h2 className="text-xl font-semibold mb-4 text-gray-800">Customer Reviews</h2>
-      {reviews && reviews.length > 0 ? (
+    <div className="card p-6">
+      <h2 className="mb-4 text-xl font-semibold text-gray-800">Customer Reviews ({reviews.length})</h2>
+      {sorted.length > 0 ? (
         <div className="space-y-4">
-          {reviews.map((review, index) => (
-            <div key={index} className="border-t pt-4">
-              <div className="flex justify-between items-center">
-                <p className="font-medium text-gray-900">{review.author}</p>
-                <span className="text-yellow-500 text-sm">
-                  {'★'.repeat(review.rating)}{' '}
-                  <span className="text-gray-500 ml-1">{review.rating}/5</span>
-                </span>
+          {sorted.map((review, index) => (
+            <div key={review._id || index} className="border-t border-gray-100 pt-4 first:border-0 first:pt-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium text-gray-900">{review.author || 'Anonymous'}</p>
+                <StarRating value={review.rating} />
               </div>
-              <p className="text-gray-700 mt-2">{review.comment}</p>
+              {review.createdAt && <p className="text-xs text-gray-400">{formatDate(review.createdAt)}</p>}
+              <p className="mt-2 whitespace-pre-line text-gray-700">{review.comment}</p>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-gray-500 italic">No reviews yet.</p>
+        <p className="italic text-gray-500">No reviews yet. Be the first to share your thoughts!</p>
       )}
     </div>
   );

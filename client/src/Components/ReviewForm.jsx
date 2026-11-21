@@ -1,82 +1,56 @@
-// components/ReviewForm.jsx
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useAuth } from '../context/AuthContext'; // Assuming token is needed
+import { useState } from 'react';
+import api, { getErrorMessage } from '../api/client';
+import { StarInput } from './StarRating';
 
+/** Posts a review. `onReviewAdded` receives the updated item returned by the API. */
 const ReviewForm = ({ itemId, onReviewAdded }) => {
-  const { token, user } = useAuth(); // Assumes user info is in context
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
+    setSubmitting(true);
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/items/${itemId}/reviews`,
-        {
-          author:'Anonymous',
-          rating,
-          comment,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setSuccess('Review submitted!');
-      setRating(5);
-      setComment('');
-      onReviewAdded(); // optional callback to refresh reviews
+      const { data } = await api.post(`/items/${itemId}/reviews`, { rating, comment });
+      onReviewAdded(data);
     } catch (err) {
-      console.error(err);
-      setError('Failed to submit review');
+      setError(getErrorMessage(err, 'Failed to submit review.'));
+      setSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-4 rounded shadow mt-6 space-y-4">
+    <form onSubmit={handleSubmit} className="card space-y-4 p-6">
       <h3 className="text-lg font-semibold text-green-700">Leave a Review</h3>
 
-      {error && <p className="text-red-500">{error}</p>}
-      {success && <p className="text-green-600">{success}</p>}
+      {error && <p className="alert-error">{error}</p>}
 
       <div>
-        <label className="block font-medium">Rating</label>
-        <select
-          value={rating}
-          onChange={(e) => setRating(Number(e.target.value))}
-          className="border rounded px-3 py-2 w-full"
-        >
-          {[5, 4, 3, 2, 1].map((r) => (
-            <option key={r} value={r}>
-              {r} {r === 1 ? 'star' : 'stars'}
-            </option>
-          ))}
-        </select>
+        <span className="label">Rating</span>
+        <StarInput value={rating} onChange={setRating} />
       </div>
 
       <div>
-        <label className="block font-medium">Comment</label>
+        <label htmlFor="comment" className="label">
+          Comment
+        </label>
         <textarea
+          id="comment"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="border rounded px-3 py-2 w-full"
+          className="input"
           rows={4}
+          maxLength={1000}
           required
         />
       </div>
 
-      <button
-        type="submit"
-        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-      >
-        Submit Review
+      <button type="submit" disabled={submitting} className="btn-primary">
+        {submitting ? 'Submitting...' : 'Submit Review'}
       </button>
     </form>
   );

@@ -1,45 +1,44 @@
-// src/components/ItemCard.jsx
-import React from 'react';
 import { Link } from 'react-router-dom';
+import ProductImage from './ProductImage';
+import { StarRating } from './StarRating';
+import { formatPrice } from '../utils/format';
 
-const ItemCard = ({ id, name, image, description, category, price, quantity }) => {
+/** Product card. `actions` is an optional footer (e.g. Edit / Delete on "My Items"). */
+const ItemCard = ({ item, actions }) => {
+  const { _id, name, image, description, category, price, quantity, averageRating = 0, reviewCount = 0 } = item;
+  const inStock = quantity > 0;
+
   return (
-    <Link to={`/items/${id}`} className="block">
-      <div className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
-        {/* Product Image */}
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-48 object-contain bg-gray-100"
-        />
+    <article className="card flex flex-col overflow-hidden transition hover:shadow-md">
+      <Link to={`/items/${_id}`} className="block">
+        <ProductImage src={image} alt={name} className="h-48 w-full" />
+      </Link>
 
-        {/* Card Content */}
-        <div className="p-4">
-          {/* Category Tag */}
-          <span className="inline-block px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full mb-2">
-            {category}
+      <div className="flex flex-1 flex-col p-4">
+        <span className="mb-2 w-fit rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+          {category}
+        </span>
+
+        <h2 className="text-lg font-semibold text-gray-900">
+          <Link to={`/items/${_id}`} className="hover:text-green-700">
+            {name}
+          </Link>
+        </h2>
+
+        <p className="mb-2 mt-1 line-clamp-2 text-sm text-gray-600">{description}</p>
+
+        <StarRating value={averageRating} count={reviewCount} />
+
+        <div className="mt-auto flex items-center justify-between pt-4">
+          <span className="text-lg font-bold text-gray-900">{formatPrice(price)}</span>
+          <span className={`text-sm font-medium ${inStock ? 'text-green-600' : 'text-red-500'}`}>
+            {inStock ? `${quantity} in stock` : 'Out of stock'}
           </span>
-
-          {/* Title */}
-          <h2 className="text-lg font-semibold text-gray-800">{name}</h2>
-
-          {/* Description */}
-          <p className="text-sm text-gray-600 mt-1 mb-2">{description}</p>
-
-          {/* Price & Quantity */}
-          <div className="flex justify-between items-center mt-4 text-sm">
-            <span className="text-gray-800 font-medium">Price: ${price}</span>
-            <span
-              className={`${
-                quantity > 0 ? 'text-green-600' : 'text-red-500'
-              } font-medium`}
-            >
-              {quantity > 0 ? `${quantity} in stock` : 'Out of stock'}
-            </span>
-          </div>
         </div>
       </div>
-    </Link>
+
+      {actions && <div className="flex gap-2 border-t border-gray-100 p-3">{actions}</div>}
+    </article>
   );
 };
 

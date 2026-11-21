@@ -1,90 +1,88 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // 👈 import the context
+import { useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import api, { getErrorMessage } from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import AuthCard from '../Components/AuthCard';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); // 👈 destructure login from context
+  const location = useLocation();
+  const { token, login } = useAuth();
+
+  const redirectTo = location.state?.from || '/';
+
+  if (token && !submitting) return <Navigate to={redirectTo} replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSubmitting(true);
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
-        email,
-        password,
-      });
-
-      const token = response.data.token;
-
-      // Update context and localStorage
-      login(token); // 👈 call login from AuthContext
-
-      // Redirect to home
-      navigate('/');
+      const { data } = await api.post('/auth/login', { email, password });
+      login(data.token, data.user);
+      navigate(redirectTo, { replace: true });
     } catch (err) {
-      if (err.response?.data?.msg) {
-        setError(err.response.data.msg);
-      } else {
-        setError('Login failed. Please try again.');
-      }
+      setError(getErrorMessage(err, 'Login failed. Please try again.'));
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 border rounded shadow">
-      <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-
-      {error && <p className="mb-4 text-red-600">{error}</p>}
+    <AuthCard
+      title="Welcome back"
+      subtitle="Log in to your account"
+      footer={
+        <>
+          Don&apos;t have an account?{' '}
+          <Link to="/register" className="font-semibold text-green-700 hover:underline">
+            Register
+          </Link>
+        </>
+      }
+    >
+      {error && <p className="alert-error mb-4">{error}</p>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block font-semibold mb-1">Email</label>
+          <label htmlFor="email" className="label">
+            Email
+          </label>
           <input
             type="email"
             id="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full border px-3 py-2 rounded"
+            className="input"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block font-semibold mb-1">Password</label>
+          <label htmlFor="password" className="label">
+            Password
+          </label>
           <input
             type="password"
             id="password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full border px-3 py-2 rounded"
+            className="input"
           />
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
-        >
-          Login
+        <button type="submit" disabled={submitting} className="btn-primary w-full py-2.5">
+          {submitting ? 'Logging in...' : 'Login'}
         </button>
       </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-gray-700 mb-2">Don't have an account?</p>
-        <Link
-          to="/register"
-          className="inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >
-          Register
-        </Link>
-      </div>
-    </div>
+    </AuthCard>
   );
 };
 
