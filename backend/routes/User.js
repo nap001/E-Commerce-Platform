@@ -1,18 +1,15 @@
 const express = require('express');
-const router = express.Router();
 const User = require('../models/User');
-const authenticate = require('../middleware/authMiddleware'); // optional if private
+const validateObjectId = require('../middleware/validateObjectId');
+const HttpError = require('../utils/HttpError');
 
-// 🔓 Public: Get user by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select('-password'); // exclude password
-    if (!user) return res.status(404).json({ msg: 'User not found' });
+const router = express.Router();
 
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
+// Public profile: deliberately exposes only non-sensitive fields (no email / admin flag)
+router.get('/:id', validateObjectId(), async (req, res) => {
+  const user = await User.findById(req.params.id).select('name createdAt');
+  if (!user) throw new HttpError(404, 'User not found');
+  res.json({ id: user._id, name: user.name, createdAt: user.createdAt });
 });
 
 module.exports = router;

@@ -1,9 +1,7 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const env = require('../config/env');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-const authenticate = async (req, res, next) => {
+const authenticate = (req, res, next) => {
   const authHeader = req.header('Authorization');
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -13,12 +11,12 @@ const authenticate = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // Should contain at least `id`
+    const decoded = jwt.verify(token, env.JWT_SECRET);
+    req.user = { id: decoded.id };
     next();
   } catch (err) {
-    console.error('Token verification failed:', err);
-    res.status(401).json({ msg: 'Token is not valid' });
+    const msg = err.name === 'TokenExpiredError' ? 'Session expired, please log in again' : 'Token is not valid';
+    res.status(401).json({ msg });
   }
 };
 
