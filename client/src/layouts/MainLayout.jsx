@@ -1,14 +1,15 @@
-// src/layouts/MainLayout.jsx
-import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from '../Components/NavBar';
-const MainLayout = () => {
-  return (
-    <>
-      <Navbar />
-      <Outlet /> {/* This renders the matched child route */}
-    </>
-  );
-};
+import Footer from '../Components/Footer';
+
+const MainLayout = () => (
+  <div className="flex min-h-screen flex-col">
+    <Navbar />
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <Outlet />
+    </main>
+    <Footer />
+  </div>
+);
 
 export default MainLayout;
